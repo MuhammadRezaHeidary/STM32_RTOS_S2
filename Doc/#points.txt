@@ -1,0 +1,87 @@
+################## How to create a task?
+1. create ID (task handler)
+
+osThreadId myTask03Handle;
+
+2. create entry function
+
+void StartTask03(void const * argument);
+
+3. define Thread
+
+osThreadDef(myTask03, StartTask03, osPriorityBelowNormal, 0, 128);
+
+4. create Thread and assign ID to it
+
+myTask03Handle = osThreadCreate(osThread(myTask03), NULL);
+
+5. start kernel
+
+osKernelStart();
+
+6. task entry function
+
+void StartTask03(void const * argument)
+{
+  for(;;)
+  {
+	  task03_send();
+//	  osDelay(3000);
+	  osDelay(1000);
+  }
+}
+
+7. task while function
+
+void task03_send() {
+	uint8_t data[] = "This is a message from Task 3\r\n";
+	HAL_UART_Transmit(&huart1, data, sizeof(data) - 1, 500);
+}
+________________________________________
+################## Important Functions
+
+⚫ osStatus osThreadSuspend (osThreadId thread_id);
+⚫ osStatus osThreadResume (osThreadId thread_id);
+⚫ osStatus osThreadTerminate (osThreadId thread_id);
+⚫ osStatus osThreadYield (void);
+⚫ osStatus osThreadSuspendAll (void);
+⚫ osStatus osThreadResumeAll (void);
+⚫ osStatus osDelayUntil (uint32_t *PreviousWakeTime, uint32_t millisec);
+________________________________________
+################## Semaphores
+
+⚫ Semaphores are used to synchronize tasks with other events in the system (especially IRQs)
+⚫ Waiting for semaphore is equal to wait() procedure, task is in blocked state not taking CPU time
+⚫ Semaphore should be created before usage
+⚫ In FreeRTOS implementation semaphores are based on queue mechanism
+⚫ In fact those are queues with length 1 and data size 0
+⚫ There are following types of semaphores in FreeRTOS:
+	·Binary - simple on/off mechanism
+	·Counting - counts multiple give and multiple take
+	·Mutex - Mutual Exclusion type semaphores (explained later on)
+	·Recursive (in CMSIS FreeRTOS used only for Mutexes)
+⚫ Turn on semaphore = give a semaphore can be done from other task or from interrupt subroutine (function os SemaphoreRelease() )
+⚫ Turn off semaphore = take a semaphore can be done from the task (function osSemaphoreWait() )
+________________________________________
+################## Semaphores Functions
+
+⚫ Semaphore creation
+	·os SemaphoreId os SemaphoreCreate (const os SemaphoreDef_t *semaphore_def, int32_t count)
+
+⚫ Wait for Semaphore release
+	·int32_t os SemaphoreWait (os SemaphoreId semaphore_id, uint32_t millisec)
+
+⚫ Semaphore release
+	·osStatus os SemaphoreRelease (os SemaphoreId semaphore_id)
+________________________________________
+################## Other Points
+
+1. We should describe tasks with different priorities when using same resource => RTOS_S0
+for example if we have 3 threads and all of them want to send data via UART1 every 1 second, we should describe and initilize them with different priorities.
+
+2. vTaskDelayUntil is enabled in => RTOS_S1
+vTaskDelayUntil Parameter Description: It is one of the macros allowing those components of the real time kernel not utilized by your application to be excluded from your build. - this ensures the RTOS does not use any more ROM or RAM than necessary for your particular embedded application. To include the vTaskDelayUntil() API function, set vTaskDelayUntil to 1 (Enabled).
+
+3. Priority Inversion : when a lower priority task preempt a higher priotrity task it's called priority inversion => RTOS_S2
+
+4. ...
